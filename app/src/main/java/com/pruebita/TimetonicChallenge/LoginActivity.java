@@ -1,7 +1,6 @@
 package com.pruebita.TimetonicChallenge;
 
 import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -27,39 +26,59 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Initialize UI components
         emailEditText = findViewById(R.id.username);
         passwordEditText = findViewById(R.id.password);
         loginButton = findViewById(R.id.loginButton);
-        apiService = new ApiService();
 
+        // Get the singleton instance of ApiService
+        apiService = ApiService.getInstance();
+
+        // Set onClickListener for the login button
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String email = emailEditText.getText().toString().trim();
-                String password = passwordEditText.getText().toString().trim();
-
-                Call<LoginResponse> call = apiService.login(email, password);
-                call.enqueue(new Callback<LoginResponse>() {
-                    @Override
-                    public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
-                        if (response.isSuccessful()) {
-                            LoginResponse loginResponse = response.body();
-                            if (loginResponse != null && loginResponse.isSuccess()) {
-                                String sessionToken = loginResponse.getSessionToken();
-                            } else {
-                                Toast.makeText(LoginActivity.this, "Login Error", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            Toast.makeText(LoginActivity.this, "Server Error", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<LoginResponse> call, Throwable t) {
-                        Toast.makeText(LoginActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
+                performLogin();
             }
         });
+    }
+
+    private void performLogin() {
+        String email = emailEditText.getText().toString().trim();
+        String password = passwordEditText.getText().toString().trim();
+
+        // Perform API call to login
+        Call<LoginResponse> call = apiService.login(email, password);
+        call.enqueue(new Callback<LoginResponse>() {
+            @Override
+            public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
+                if (response.isSuccessful()) {
+                    LoginResponse loginResponse = response.body();
+                    if (loginResponse != null && loginResponse.isSuccess()) {
+                        String sessionToken = loginResponse.getSessionToken();
+                        // Handle successful login with session token
+                        handleSuccess(sessionToken);
+                    } else {
+                        showMessage("Login Error");
+                    }
+                } else {
+                    showMessage("Server Error");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<LoginResponse> call, Throwable t) {
+                showMessage("Network Error: " + t.getMessage());
+            }
+        });
+    }
+
+    private void handleSuccess(String sessionToken) {
+        // Navigate to next screen or store the session token
+        Toast.makeText(this, "Login Successful! Token: " + sessionToken, Toast.LENGTH_LONG).show();
+    }
+
+    private void showMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
